@@ -1,6 +1,9 @@
 # Operating system
 .DS_Store
 
+# Local-only agent instructions
+AGENTS.md
+
 # Python
 __pycache__/
 *.py[cod]
