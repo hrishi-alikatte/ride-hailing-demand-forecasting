@@ -1,0 +1,21 @@
+dataset_name: nyc_yellow_taxi_2018
+raw_glob: data/yellow_tripdata_2018-*.parquet
+pickup_time_column: tpep_pickup_datetime
+dropoff_time_column: tpep_dropoff_datetime
+origin_zone_column: PULocationID
+destination_zone_column: DOLocationID
+time_interval_minutes: 15
+study_area: Manhattan
+spatial_partition: TLC taxi zones
+manhattan_zone_count_from_paper: 68
+normalization: zscore_train_only
+train_ratio: 0.6
+validation_ratio: 0.2
+test_ratio: 0.2
+history_steps: 12
+forecast_steps: 12
+required_external_assets:
+  - data/external/taxi_zone_lookup.csv
+notes:
+  - The paper uses Manhattan TLC zones and 15-minute aggregation.
+  - The TLC zone lookup asset is not currently present in the repository.

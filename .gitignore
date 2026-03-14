@@ -1,0 +1,40 @@
+# Operating system
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# Local environment
+.env
+.env.*
+
+# Data and generated outputs
+data/*.parquet
+data/interim/**
+data/processed/**
+!data/interim/.gitkeep
+!data/processed/.gitkeep
+artifacts/checkpoints/**
+artifacts/logs/**
+artifacts/reports/**
+!artifacts/checkpoints/.gitkeep
+!artifacts/logs/.gitkeep
+!artifacts/reports/.gitkeep
+
+# Experiment trackers
+mlruns/
+runs/
+wandb/
+
+# Model artifacts
+*.ckpt
+*.pt
+*.pth

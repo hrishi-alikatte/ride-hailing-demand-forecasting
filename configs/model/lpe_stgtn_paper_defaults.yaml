@@ -1,0 +1,32 @@
+model_name: lpe_stgtn
+
+embedding:
+  include_time_of_day: true
+  include_day_of_week: true
+  period_embedding_dim: 10
+
+local_module:
+  aft_local_window: 4
+  gcrn_layers: 1
+  hidden_dim: 64
+
+global_module:
+  semantic_graphs:
+    - distance
+    - od_flow
+  attention_heads: 4
+
+fusion:
+  attention_heads: 4
+
+training:
+  loss: l1
+  optimizer: adam
+  learning_rate: 0.001
+  batch_size: 64
+
+paper_ambiguities:
+  - distance graph sigma and sparsity thresholds are not fully specified
+  - OD graph thresholding details are under-specified
+  - shared-pattern pool size and factorization dimensions are under-specified
+  - exact convolution channel sizes and kernel choices are not fully specified

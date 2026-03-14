@@ -1,0 +1,11 @@
+experiment_name: sanity_raw_inspection
+seed: 2026
+
+logging:
+  root_dir: artifacts/logs
+  report_dir: artifacts/reports
+
+inspection:
+  file_glob: data/yellow_tripdata_2018-*.parquet
+  sample_rows: 3
+  limit: 2

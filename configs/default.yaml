@@ -1,0 +1,13 @@
+project:
+  name: lpe_stgtn_reproduction
+  seed: 2026
+  paper: Local Perception-Enhanced Spatial-Temporal Evolving Graph Transformer Network
+
+runtime:
+  device: auto
+  deterministic: true
+
+paths:
+  data_root: data
+  artifacts_root: artifacts
+  configs_root: configs

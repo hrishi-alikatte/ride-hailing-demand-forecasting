@@ -1,0 +1,12 @@
+optimizer:
+  name: adam
+  learning_rate: 0.001
+
+trainer:
+  max_epochs: 100
+  early_stopping_patience: 20
+  gradient_clip_norm: null
+
+reproducibility:
+  seed: 2026
+  deterministic: true
