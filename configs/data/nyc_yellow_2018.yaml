@@ -16,6 +16,8 @@ history_steps: 12
 forecast_steps: 12
 required_external_assets:
   - data/external/taxi_zone_lookup.csv
+  - data/external/taxi_zones/taxi_zones.shp
 notes:
   - The paper uses Manhattan TLC zones and 15-minute aggregation.
-  - The TLC zone lookup asset is not currently present in the repository.
+  - The repository now includes TLC lookup and taxi-zone geometry assets for Manhattan filtering and distance-graph construction.
+  - Current TLC lookup and geometry assets expose 69 Manhattan zones, while the paper reports 68 zones; the exact paper-faithful filtering rule remains unresolved.

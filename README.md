@@ -80,7 +80,8 @@ Raw data inspection can also be run directly:
 
 - The raw monthly parquet files are expected under `data/`.
 - Raw data is intentionally not tracked by git.
-- The exact Manhattan zone lookup asset required for paper-faithful preprocessing is not yet present in the repository.
+- The repository now includes `data/external/taxi_zone_lookup.csv` and `data/external/taxi_zones/` for Manhattan lookup and zone geometry.
+- The exact paper-faithful Manhattan study-area rule remains unresolved because the current TLC lookup and geometry assets expose 69 Manhattan zones, while the paper reports 68.
 - Derived outputs should go to `data/interim/`, `data/processed/`, and `artifacts/`.
 
 ## Current Implementation Status
@@ -99,17 +100,18 @@ Known ambiguities from the paper:
 - distance graph threshold details are under-specified
 - OD-flow graph sparsification details are under-specified
 - some channel sizes and convolution details are not explicit
-- the Manhattan study-area asset is missing locally
+- the exact Manhattan 68-zone filtering rule is not yet resolved from the current TLC assets
 
 These are being tracked in `docs/reproduction_log.md`.
 
 ## Next Steps
 
 1. Add the TLC zone lookup asset and Manhattan filtering pipeline.
-2. Generate reproducible 15-minute demand tensors and train/validation/test splits.
-3. Implement baseline models before the full LPE-STGTN architecture.
-4. Add graph builders for distance and OD-flow semantics.
-5. Implement the paper model in staged modules with tensor-shape tests.
+2. Resolve the Manhattan 68-zone study-area rule from the current TLC lookup and geometry assets.
+3. Generate reproducible 15-minute demand tensors and train/validation/test splits.
+4. Implement baseline models before the full LPE-STGTN architecture.
+5. Add graph builders for distance and OD-flow semantics.
+6. Implement the paper model in staged modules with tensor-shape tests.
 
 ## Reproducibility
 

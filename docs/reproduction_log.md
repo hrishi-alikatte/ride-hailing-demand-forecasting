@@ -1,5 +1,36 @@
 # Reproduction Log
 
+## 2026-03-23 - External spatial assets organized for the NYC Yellow Taxi pipeline
+
+### External assets now present
+
+- Added `data/external/taxi_zone_lookup.csv` as the TLC zone lookup asset for mapping `LocationID` values to borough and zone names.
+- Moved the taxi-zone shapefile bundle into `data/external/taxi_zones/` so the lookup and geometry assets live under the repository's external-data area.
+- Verified that the lookup CSV has `265` rows and `69` rows with `Borough == "Manhattan"`.
+- Verified that the taxi-zone shapefile has `263` geometries, CRS `EPSG:2263`, and fields including `LocationID`, `zone`, `borough`, and `geometry`.
+- Verified that the taxi-zone shapefile also contains `69` Manhattan geometries.
+
+### What this unblocks
+
+- No additional NYC Yellow Taxi trip files are needed for the NYC-only reproduction track.
+- The repository now has the minimum external assets needed to begin Manhattan filtering, derive OD-flow statistics from the raw trip table, and construct a geometry-based distance graph.
+
+### Remaining ambiguity to resolve before paper-faithful preprocessing
+
+- The paper reports `68` Manhattan zones, but the current TLC lookup and geometry assets both expose `69` Manhattan zones.
+- Before claiming paper-faithful preprocessing, the exact exclusion rule or zone-set definition used by the paper must be identified and recorded.
+- The paper describes the distance graph in terms of proximity in the real traffic network, but does not specify the exact distance source or thresholds. A centroid- or polygon-based zone distance derived from the TLC geometry is a defensible default if no road-network asset is introduced, but this should be documented as an implementation choice if used.
+
+### Strongest current hypothesis for the 68-zone study area
+
+- The strongest single-zone exclusion candidate is `LocationID 103`, labeled `Governor's Island/Ellis Island/Liberty Island`.
+- Rationale:
+  - Removing `103` from the current TLC-derived Manhattan set reduces `69` Manhattan zones to the paper-reported `68`.
+  - In the full 2018 NYC Yellow Taxi raw data, zone `103` has `0` pickups and `0` dropoffs.
+  - Under a stricter Manhattan-only filter where both pickup and dropoff endpoints are restricted to Manhattan TLC zones, zone `103` still has `0` pickups and `0` dropoffs.
+  - The Manhattan set also contains `LocationID` values `104` and `105` with the same zone label, but these still show nonzero 2018 activity.
+- This is currently a defensible implementation hypothesis, not a confirmed paper fact.
+
 ## 2026-03-14 - Initial repository analysis and scaffold planning
 
 ### Source documents reviewed
