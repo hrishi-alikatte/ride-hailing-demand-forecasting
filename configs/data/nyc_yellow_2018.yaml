@@ -1,13 +1,22 @@
 dataset_name: nyc_yellow_taxi_2018
 raw_glob: data/yellow_tripdata_2018-*.parquet
+taxi_zone_lookup_path: data/external/taxi_zone_lookup.csv
 pickup_time_column: tpep_pickup_datetime
 dropoff_time_column: tpep_dropoff_datetime
 origin_zone_column: PULocationID
 destination_zone_column: DOLocationID
+demand_definition: pickup_counts
+study_area_filter_mode: pickup_only
 time_interval_minutes: 15
 study_area: Manhattan
 spatial_partition: TLC taxi zones
 manhattan_zone_count_from_paper: 68
+study_area_definition_status: provisional_paper_68_hypothesis
+study_area_excluded_location_ids:
+  - 103
+time_range_start: "2018-01-01T00:00:00"
+time_range_end: "2018-12-31T23:45:00"
+processed_output_subdir: data/processed/nyc_yellow_taxi_2018_manhattan_pickups_15min
 normalization: zscore_train_only
 train_ratio: 0.6
 validation_ratio: 0.2
@@ -17,7 +26,11 @@ forecast_steps: 12
 required_external_assets:
   - data/external/taxi_zone_lookup.csv
   - data/external/taxi_zones/taxi_zones.shp
+study_area_definition_notes:
+  - The default preprocessing path excludes LocationID 103 as a provisional paper-faithful 68-zone hypothesis.
+  - This exclusion is config-driven and should be revised if a better paper-faithful Manhattan rule is confirmed.
 notes:
   - The paper uses Manhattan TLC zones and 15-minute aggregation.
   - The repository now includes TLC lookup and taxi-zone geometry assets for Manhattan filtering and distance-graph construction.
   - Current TLC lookup and geometry assets expose 69 Manhattan zones, while the paper reports 68 zones; the exact paper-faithful filtering rule remains unresolved.
+  - Keep any study-area exclusion rule config-driven and documented rather than hardcoding an unverified 68-zone assumption.

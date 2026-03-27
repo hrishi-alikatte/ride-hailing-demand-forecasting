@@ -13,6 +13,8 @@ class ProjectPaths:
     data: Path
     configs: Path
     artifacts: Path
+    interim: Path
+    processed: Path
 
 
 def get_project_paths() -> ProjectPaths:
@@ -24,4 +26,6 @@ def get_project_paths() -> ProjectPaths:
         data=root / "data",
         configs=root / "configs",
         artifacts=root / "artifacts",
+        interim=root / "data" / "interim",
+        processed=root / "data" / "processed",
     )

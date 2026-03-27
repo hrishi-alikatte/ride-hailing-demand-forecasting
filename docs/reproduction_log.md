@@ -1,5 +1,64 @@
 # Reproduction Log
 
+## 2026-03-27 - Stage-2 baseline infrastructure added
+
+### What was implemented
+
+- Added a processed-dataset loader in `src/lpe_stgtn/data/datasets.py` for reading the stage-1 `.npz` and `metadata.json` artifacts and exposing lazy split-specific window datasets.
+- Added two baseline models:
+  - `PersistenceBaseline`, which repeats the last observed timestep across the forecast horizon
+  - `LSTMBaseline`, a simple demand-only recurrent encoder that predicts the full 12-step horizon at once
+- Added a config-driven baseline runner in `src/lpe_stgtn/training/baselines.py` with support for:
+  - persistence evaluation on validation and test splits
+  - LSTM training with Adam, L1 loss, early stopping, report writing, and checkpoint saving
+- Added baseline experiment configs for NYC persistence and NYC LSTM runs.
+- Reports and checkpoints are separated into their respective `artifacts/reports/` and `artifacts/checkpoints/` areas.
+
+### Why this stage was structured this way
+
+- The persistence baseline gives a zero-training sanity floor that can catch dataset leakage or metric mistakes quickly.
+- The LSTM baseline provides the first trainable benchmark on top of the processed demand tensors before introducing graph construction or the full paper architecture.
+- The runner is intentionally config-driven and artifact-writing so future graph and paper-model experiments can reuse the same processed data contract and reporting pattern.
+
+## 2026-03-27 - Stage-1 NYC preprocessing pipeline implemented
+
+### What was implemented
+
+- Added a config-driven preprocessing pipeline in `src/lpe_stgtn/data/preprocessing.py` to read the 12 monthly NYC Yellow Taxi parquet files, filter the configured Manhattan study area, aggregate pickup demand at 15-minute resolution, concatenate the full 2018 timeline, and write processed artifacts.
+- Added a `prepare-data` CLI command and `make prepare-data` target to build the stage-1 dataset reproducibly from repository-local inputs.
+- The stage-1 outputs now include:
+  - a dense demand matrix parquet file
+  - a compressed NumPy archive with raw demand, normalized demand, zone IDs, temporal indices, and split sample indices
+  - JSON metadata with split boundaries, normalization statistics, study-area details, and monthly aggregation stats
+- Added preprocessing tests covering config-driven preparation and supervised window extraction.
+
+### Stage-1 implementation choices
+
+- The current stage-1 default defines demand as pickup counts by `PULocationID` and pickup timestamp, aggregated into 15-minute bins.
+- The current stage-1 default uses chronological `60/20/20` step splits and computes a single scalar Z-score mean/std from the training split, following the paper formula as closely as possible from the available detail.
+- The default config now excludes `LocationID 103` as a provisional Manhattan 68-zone hypothesis so the processed study area matches the paper-reported zone count.
+- The monthly raw parquet files are clipped to the filename month during aggregation because the local raw extract contains some pickup timestamps that fall outside their nominal month, and counting those rows would risk silent cross-month leakage or double counting.
+
+### Why the 103 exclusion is still documented as provisional
+
+- The paper states that Manhattan is divided into `68` TLC zones, but the current repository lookup asset exposes `69` Manhattan rows.
+- In the local 2018 raw data, `LocationID 103` has `0` pickups and `0` dropoffs across the full year, which makes it the strongest current exclusion candidate.
+- However, this remains an implementation hypothesis rather than a confirmed paper fact, so it is kept explicit in config and metadata rather than hidden inside code.
+
+## 2026-03-27 - Lookup-backed Manhattan study-area inspection added
+
+### What was implemented
+
+- Added a lookup-backed study-area utility in `src/lpe_stgtn/data/taxi_zones.py` for loading `data/external/taxi_zone_lookup.csv` and summarizing borough-specific zone sets.
+- Added a new CLI command, `lpe-stgtn inspect-study-area`, to report the current borough zone count, any explicitly excluded `LocationID` values, and whether the configured count matches the paper-derived expectation.
+- Added `study_area_excluded_location_ids` to `configs/data/nyc_yellow_2018.yaml` so any eventual 68-zone exclusion rule stays config-driven and reviewable instead of being hardcoded invisibly.
+- Added tests covering lookup parsing, explicit zone exclusion behavior, and the current Manhattan count mismatch from the repository lookup asset.
+
+### Why this change was staged this way
+
+- The repository currently has no geospatial reader dependency such as `geopandas`, `fiona`, `shapely`, or `pyogrio`, so this session intentionally stopped at the lookup-backed study-area layer instead of partially implementing shapefile ingestion.
+- This keeps the next preprocessing stage unblocked for Manhattan zone filtering from the trip table while preserving the unresolved `69`-vs-`68` ambiguity as an explicit configuration and documentation concern.
+
 ## 2026-03-23 - External spatial assets organized for the NYC Yellow Taxi pipeline
 
 ### External assets now present

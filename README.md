@@ -65,6 +65,9 @@ python3 -m venv .venv
 
 ```bash
 make inspect-data
+make prepare-data
+make run-baseline
+.venv/bin/lpe-stgtn inspect-study-area
 make test
 make lint
 make format
@@ -74,6 +77,8 @@ Raw data inspection can also be run directly:
 
 ```bash
 .venv/bin/lpe-stgtn inspect-data --limit 1 --sample-rows 1
+.venv/bin/lpe-stgtn prepare-data
+.venv/bin/lpe-stgtn run-baseline --config configs/experiments/nyc_persistence_baseline.yaml
 ```
 
 ## Data Notes
@@ -91,9 +96,14 @@ Implemented:
 - project packaging via `pyproject.toml`
 - config-driven scaffold under `configs/`
 - CLI entrypoint for raw parquet inspection
+- lookup-backed CLI entrypoint for borough study-area inspection
+- stage-1 preprocessing pipeline for reproducible Manhattan pickup-demand tensors and split metadata
+- stage-2 baseline runner with persistence and LSTM baselines on the processed dataset
 - metric utilities for MAE, RMSE, and MAPE
+- taxi-zone lookup utilities for reproducible borough filtering and explicit zone exclusions
+- processed-dataset loader and lazy supervised window datasets
 - reproducibility helpers and project path utilities
-- initial unit tests for config loading, data inspection, and metrics
+- initial unit tests for config loading, data inspection, metrics, and preprocessing helpers
 
 Known ambiguities from the paper:
 
@@ -106,12 +116,9 @@ These are being tracked in `docs/reproduction_log.md`.
 
 ## Next Steps
 
-1. Add the TLC zone lookup asset and Manhattan filtering pipeline.
-2. Resolve the Manhattan 68-zone study-area rule from the current TLC lookup and geometry assets.
-3. Generate reproducible 15-minute demand tensors and train/validation/test splits.
-4. Implement baseline models before the full LPE-STGTN architecture.
-5. Add graph builders for distance and OD-flow semantics.
-6. Implement the paper model in staged modules with tensor-shape tests.
+1. Run and compare baseline experiments, then record the first stable benchmark numbers.
+2. Add graph builders for distance and OD-flow semantics.
+3. Implement the paper model in staged modules with tensor-shape tests.
 
 ## Reproducibility
 

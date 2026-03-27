@@ -1,7 +1,7 @@
 PYTHON ?= python3
 SRC_PATHS := src tests scripts
 
-.PHONY: help venv install format lint test inspect-data prepare-dirs
+.PHONY: help venv install format lint test inspect-data prepare-data run-baseline prepare-dirs
 
 help:
 	@echo "Available targets:"
@@ -11,6 +11,8 @@ help:
 	@echo "  make lint          Run static lint checks"
 	@echo "  make test          Run unit tests"
 	@echo "  make inspect-data  Run a raw-data sanity inspection"
+	@echo "  make prepare-data  Build the stage-1 processed demand dataset"
+	@echo "  make run-baseline  Run a baseline experiment (default: persistence)"
 	@echo "  make prepare-dirs  Create derived-data and artifact directories"
 
 venv:
@@ -31,6 +33,12 @@ test:
 
 inspect-data:
 	PYTHONPATH=src $(PYTHON) -m lpe_stgtn.cli inspect-data --limit 2 --sample-rows 3
+
+prepare-data:
+	PYTHONPATH=src $(PYTHON) -m lpe_stgtn.cli prepare-data
+
+run-baseline:
+	PYTHONPATH=src $(PYTHON) -m lpe_stgtn.cli run-baseline
 
 prepare-dirs:
 	mkdir -p artifacts/checkpoints artifacts/logs artifacts/reports
