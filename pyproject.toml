@@ -12,9 +12,11 @@ authors = [
   { name = "Ride-hailing reproduction team" },
 ]
 dependencies = [
+  "networkx>=3.3",
   "numpy>=1.26",
   "pandas>=2.2",
   "pyarrow>=15.0",
+  "pyproj>=3.7",
   "PyYAML>=6.0.1",
   "torch>=2.2",
   "tqdm>=4.66",
@@ -66,4 +68,3 @@ warn_return_any = true
 warn_unused_configs = true
 check_untyped_defs = true
 no_implicit_optional = true
-

@@ -1,0 +1,8 @@
+experiment_name: nyc_persistence_baseline_sensitivity_67
+processed_data_dir: data/processed/nyc_yellow_taxi_2018_manhattan_pickups_15min_sensitivity_67
+
+model:
+  name: persistence
+
+artifacts:
+  report_dir: artifacts/reports/baselines

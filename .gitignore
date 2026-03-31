@@ -21,8 +21,10 @@ __pycache__/
 
 # Data and generated outputs
 data/*.parquet
+data/external/nyc_centerline/**
 data/interim/**
 data/processed/**
+!data/external/nyc_centerline/.gitkeep
 !data/interim/.gitkeep
 !data/processed/.gitkeep
 artifacts/checkpoints/**

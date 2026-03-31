@@ -19,6 +19,8 @@ from lpe_stgtn.data.datasets import (
     load_processed_dataset,
 )
 from lpe_stgtn.evaluation.metrics import mae, mape, rmse
+from lpe_stgtn.graphs.artifacts import GraphArtifactsBundle, load_graph_artifacts
+from lpe_stgtn.models.baselines.dual_graph_gru import DualGraphGRUBaseline
 from lpe_stgtn.models.baselines.lstm import LSTMBaseline
 from lpe_stgtn.models.baselines.persistence import PersistenceBaseline
 from lpe_stgtn.utils.reproducibility import seed_everything
@@ -33,6 +35,7 @@ class BaselineRunSummary:
     report_path: Path
     metrics: dict[str, dict[str, float]]
     checkpoint_path: Path | None = None
+    graph_data_dir: Path | None = None
 
 
 def run_baseline_experiment(
@@ -65,6 +68,7 @@ def run_baseline_experiment(
     )
 
     bundle = load_processed_dataset(processed_data_dir)
+    graph_bundle: GraphArtifactsBundle | None = None
 
     if model_name == "persistence":
         metrics = run_persistence_baseline(bundle)
@@ -73,6 +77,22 @@ def run_baseline_experiment(
     elif model_name == "lstm":
         metrics, checkpoint_path, training_history = train_lstm_baseline(
             bundle,
+            experiment_name=experiment_name,
+            model_config=model_config,
+            trainer_config=_require_mapping(merged_config, "trainer"),
+            optimizer_config=_require_mapping(merged_config, "optimizer"),
+            checkpoint_dir=checkpoint_dir,
+            device_name=str(merged_config.get("runtime", {}).get("device", "auto")),
+        )
+    elif model_name == "dual_graph_gru":
+        graph_data_dir = project_root / str(
+            merged_config.get("graph_data_dir", processed_data_dir / "graphs")
+        )
+        graph_bundle = load_graph_artifacts(graph_data_dir)
+        validate_graph_alignment(bundle, graph_bundle)
+        metrics, checkpoint_path, training_history = train_dual_graph_gru_baseline(
+            bundle,
+            graph_bundle=graph_bundle,
             experiment_name=experiment_name,
             model_config=model_config,
             trainer_config=_require_mapping(merged_config, "trainer"),
@@ -100,6 +120,8 @@ def run_baseline_experiment(
             "normalization_mean": bundle.normalization_mean,
             "normalization_std": bundle.normalization_std,
         },
+        "graph_data_dir": str(graph_bundle.root_dir) if graph_bundle is not None else None,
+        "graph_summary": graph_summary_payload(graph_bundle),
         "study_area_summary": bundle.metadata.get("study_area_summary", {}),
     }
     report_path.write_text(json.dumps(report_payload, indent=2), encoding="utf-8")
@@ -110,6 +132,7 @@ def run_baseline_experiment(
         report_path=report_path,
         metrics=metrics,
         checkpoint_path=checkpoint_path,
+        graph_data_dir=graph_bundle.root_dir if graph_bundle is not None else None,
     )
 
 
@@ -241,6 +264,148 @@ def train_lstm_baseline(
     return metrics, checkpoint_path, history
 
 
+def train_dual_graph_gru_baseline(
+    bundle: ProcessedDatasetBundle,
+    *,
+    graph_bundle: GraphArtifactsBundle,
+    experiment_name: str,
+    model_config: dict[str, Any],
+    trainer_config: dict[str, Any],
+    optimizer_config: dict[str, Any],
+    checkpoint_dir: Path,
+    device_name: str,
+) -> tuple[dict[str, dict[str, float]], Path, list[dict[str, float | int]]]:
+    """Train the stage-4 dual-graph temporal baseline."""
+    device = resolve_device(device_name)
+    model = DualGraphGRUBaseline(
+        num_zones=bundle.num_zones,
+        forecast_steps=bundle.forecast_steps,
+        distance_adjacency=torch.as_tensor(
+            graph_bundle.distance_adjacency_normalized,
+            dtype=torch.float32,
+        ),
+        od_flow_adjacency=torch.as_tensor(
+            graph_bundle.od_flow_adjacency_normalized,
+            dtype=torch.float32,
+        ),
+        graph_hidden_dim=int(model_config.get("graph_hidden_dim", 64)),
+        temporal_hidden_dim=int(model_config.get("temporal_hidden_dim", 128)),
+        attention_heads=int(model_config.get("attention_heads", 4)),
+        gru_layers=int(model_config.get("gru_layers", 1)),
+        dropout=float(model_config.get("dropout", 0.0)),
+    ).to(device)
+
+    checkpoint_path = checkpoint_dir / f"{experiment_name}.pt"
+    metrics, best_state_dict, history = train_torch_forecasting_model(
+        model,
+        bundle=bundle,
+        trainer_config=trainer_config,
+        optimizer_config=optimizer_config,
+        device=device,
+    )
+    torch.save(
+        {
+            "model_name": "dual_graph_gru",
+            "model_config": model_config,
+            "state_dict": best_state_dict,
+        },
+        checkpoint_path,
+    )
+    return metrics, checkpoint_path, history
+
+
+def train_torch_forecasting_model(
+    model: nn.Module,
+    *,
+    bundle: ProcessedDatasetBundle,
+    trainer_config: dict[str, Any],
+    optimizer_config: dict[str, Any],
+    device: torch.device,
+) -> tuple[dict[str, dict[str, float]], dict[str, torch.Tensor], list[dict[str, float | int]]]:
+    """Train one normalized-demand forecasting model with early stopping."""
+    train_dataset = WindowedDemandDataset(bundle, split="train", normalized=True)
+    validation_dataset = WindowedDemandDataset(bundle, split="validation", normalized=True)
+
+    batch_size = int(trainer_config.get("batch_size", 64))
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    validation_loader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=False)
+
+    criterion = nn.L1Loss()
+    optimizer = torch.optim.Adam(
+        model.parameters(), lr=float(optimizer_config.get("learning_rate", 0.001))
+    )
+    max_epochs = int(trainer_config.get("max_epochs", 20))
+    patience = int(trainer_config.get("early_stopping_patience", 5))
+    gradient_clip_norm = trainer_config.get("gradient_clip_norm")
+
+    best_state_dict: dict[str, torch.Tensor] | None = None
+    best_validation_mae = float("inf")
+    epochs_without_improvement = 0
+    history: list[dict[str, float | int]] = []
+
+    for epoch in range(1, max_epochs + 1):
+        train_loss = train_one_epoch(
+            model,
+            train_loader,
+            criterion=criterion,
+            optimizer=optimizer,
+            device=device,
+            gradient_clip_norm=gradient_clip_norm,
+        )
+        validation_metrics, validation_loss = evaluate_model(
+            model,
+            validation_loader,
+            bundle=bundle,
+            criterion=criterion,
+            device=device,
+        )
+        history.append(
+            {
+                "epoch": epoch,
+                "train_loss": train_loss,
+                "validation_loss": validation_loss,
+                "validation_mae": validation_metrics["mae"],
+                "validation_rmse": validation_metrics["rmse"],
+                "validation_mape": validation_metrics["mape"],
+            }
+        )
+
+        if validation_metrics["mae"] < best_validation_mae:
+            best_validation_mae = validation_metrics["mae"]
+            epochs_without_improvement = 0
+            best_state_dict = {
+                key: value.detach().cpu().clone() for key, value in model.state_dict().items()
+            }
+        else:
+            epochs_without_improvement += 1
+
+        if epochs_without_improvement >= patience:
+            break
+
+    if best_state_dict is None:
+        raise RuntimeError("Training finished without producing a best checkpoint.")
+
+    model.load_state_dict(best_state_dict)
+    test_dataset = WindowedDemandDataset(bundle, split="test", normalized=True)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+
+    validation_metrics, _ = evaluate_model(
+        model,
+        validation_loader,
+        bundle=bundle,
+        criterion=criterion,
+        device=device,
+    )
+    test_metrics, _ = evaluate_model(
+        model,
+        test_loader,
+        bundle=bundle,
+        criterion=criterion,
+        device=device,
+    )
+    return {"validation": validation_metrics, "test": test_metrics}, best_state_dict, history
+
+
 def train_one_epoch(
     model: nn.Module,
     loader: DataLoader[tuple[torch.Tensor, torch.Tensor]],
@@ -322,6 +487,8 @@ def format_baseline_run_summary(summary: BaselineRunSummary) -> str:
             f"RMSE={split_metrics['rmse']:.6f}, "
             f"MAPE={split_metrics['mape']:.6f}"
         )
+    if summary.graph_data_dir is not None:
+        lines.append(f"Graph artifacts: {summary.graph_data_dir}")
     if summary.checkpoint_path is not None:
         lines.append(f"Wrote checkpoint: {summary.checkpoint_path}")
     lines.append(f"Wrote report: {summary.report_path}")
@@ -358,3 +525,35 @@ def _require_string(payload: dict[str, Any], key: str) -> str:
     if not isinstance(value, str) or not value:
         raise ValueError(f"Expected non-empty string for config key '{key}'")
     return value
+
+
+def validate_graph_alignment(
+    bundle: ProcessedDatasetBundle,
+    graph_bundle: GraphArtifactsBundle,
+) -> None:
+    """Ensure the saved graphs align exactly to the processed dataset zone order."""
+    if bundle.num_zones != graph_bundle.num_zones:
+        raise ValueError(
+            "Processed dataset and graph artifact zone counts do not match: "
+            f"{bundle.num_zones} vs {graph_bundle.num_zones}"
+        )
+    if not np.array_equal(bundle.zone_ids, graph_bundle.zone_ids):
+        raise ValueError(
+            "Processed dataset zone order does not match the graph artifact zone order."
+        )
+
+
+def graph_summary_payload(graph_bundle: GraphArtifactsBundle | None) -> dict[str, Any] | None:
+    """Extract a compact graph summary for experiment reports."""
+    if graph_bundle is None:
+        return None
+    distance_graph = graph_bundle.metadata.get("distance_graph", {})
+    od_flow_graph = graph_bundle.metadata.get("od_flow_graph", {})
+    return {
+        "num_zones": graph_bundle.num_zones,
+        "distance_method": distance_graph.get("distance_method"),
+        "distance_sigma": distance_graph.get("sigma"),
+        "distance_nonzero_edges": distance_graph.get("nonzero_edges"),
+        "od_flow_nonzero_edges": od_flow_graph.get("nonzero_edges"),
+        "snap_component_policy": distance_graph.get("snap_component_policy"),
+    }

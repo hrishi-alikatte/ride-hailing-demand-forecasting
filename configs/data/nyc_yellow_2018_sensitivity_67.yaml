@@ -1,0 +1,37 @@
+dataset_name: nyc_yellow_taxi_2018
+raw_glob: data/yellow_tripdata_2018-*.parquet
+taxi_zone_lookup_path: data/external/taxi_zone_lookup.csv
+pickup_time_column: tpep_pickup_datetime
+dropoff_time_column: tpep_dropoff_datetime
+origin_zone_column: PULocationID
+destination_zone_column: DOLocationID
+demand_definition: pickup_counts
+study_area_filter_mode: pickup_only
+time_interval_minutes: 15
+study_area: Manhattan
+spatial_partition: TLC taxi zones
+manhattan_zone_count_from_paper: 68
+study_area_definition_status: sensitivity_67_excluding_103_104
+study_area_excluded_location_ids:
+  - 103
+  - 104
+time_range_start: "2018-01-01T00:00:00"
+time_range_end: "2018-12-31T23:45:00"
+processed_output_subdir: data/processed/nyc_yellow_taxi_2018_manhattan_pickups_15min_sensitivity_67
+normalization: zscore_train_only
+train_ratio: 0.6
+validation_ratio: 0.2
+test_ratio: 0.2
+history_steps: 12
+forecast_steps: 12
+required_external_assets:
+  - data/external/taxi_zone_lookup.csv
+  - data/external/taxi_zones/taxi_zones.shp
+study_area_definition_notes:
+  - This sensitivity track excludes LocationID values 103 and 104.
+  - It intentionally diverges from the paper-reported Manhattan zone count of 68 to test a road-network-clean study area.
+  - Use this track for side-by-side comparison only; it is not the paper-faithful mainline configuration.
+notes:
+  - The paper uses Manhattan TLC zones and 15-minute aggregation.
+  - The repository now includes TLC lookup, taxi-zone geometry, and official NYC road-network assets.
+  - This sensitivity track removes both the zero-activity zone 103 and the road-network-disconnected low-activity zone 104.

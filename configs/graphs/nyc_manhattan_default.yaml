@@ -1,0 +1,27 @@
+processed_data_dir: data/processed/nyc_yellow_taxi_2018_manhattan_pickups_15min
+raw_glob: data/yellow_tripdata_2018-*.parquet
+taxi_zone_shapefile_path: data/external/taxi_zones/taxi_zones.shp
+pickup_time_column: tpep_pickup_datetime
+origin_zone_column: PULocationID
+destination_zone_column: DOLocationID
+output_subdir: data/processed/nyc_yellow_taxi_2018_manhattan_pickups_15min/graphs
+
+distance_graph:
+  distance_method: road_network_shortest_path
+  road_network_geojson_path: data/external/nyc_centerline/centerline_citywide.geojson
+  road_network_source_crs: OGC:CRS84
+  road_network_target_crs: EPSG:2263
+  snap_component_policy: largest_connected_component
+  sigma: null
+  epsilon_threshold: 0.0
+
+od_flow_graph:
+  epsilon_threshold: 0.0
+
+notes:
+  - The default stage-3 distance graph now uses shortest-path distances on the official NYC Open Data Centerline road network.
+  - The graph build uses the citywide centerline asset rather than a borough-code-1-only subset because some Manhattan-zone shortest paths depend on bridge segments outside borough code 1.
+  - The default snap policy restricts zone centroids to the largest connected road-network component because `LocationID 104` is disconnected in the official centerline graph under the current provisional 68-zone study area.
+  - Zone centroids are projected into EPSG:2263 and snapped to the nearest road-network node before shortest-path distances are computed.
+  - The paper does not specify sigma or sparsification thresholds clearly; the default build resolves sigma from the off-diagonal distance standard deviation and leaves both graph thresholds at 0.0.
+  - The OD-flow graph uses trips whose pickup and dropoff endpoints are both inside the current stage-1 study area.

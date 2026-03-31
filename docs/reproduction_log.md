@@ -1,5 +1,160 @@
 # Reproduction Log
 
+## 2026-03-27 - Stage-4 first graph-based baseline implemented
+
+### What was implemented
+
+- Added `src/lpe_stgtn/graphs/artifacts.py` to load saved stage-3 graph artifacts in a way that stays aligned to the processed dataset zone order.
+- Added reusable stage-4 model components:
+  - `src/lpe_stgtn/models/components/gcn.py`
+  - `src/lpe_stgtn/models/components/attention.py`
+- Added `src/lpe_stgtn/models/baselines/dual_graph_gru.py`, a first graph-based baseline that uses:
+  - distance graph convolution
+  - OD-flow graph convolution
+  - lightweight semantic fusion attention across the two graph views
+  - a per-zone GRU temporal encoder
+- Extended `src/lpe_stgtn/training/baselines.py` so the existing baseline runner can train graph-based baselines with graph-artifact validation, graph-aware reports, and checkpoints.
+- Added the stage-4 experiment config `configs/experiments/nyc_dual_graph_gru_baseline_sensitivity_67.yaml`.
+
+### Why the semantic fusion was implemented this way
+
+- The paper's global module uses multi-head attention to fuse semantic representations from the distance graph and OD graph.
+- A literal token-level multi-head attention across all zones was too slow for practical CPU experimentation in the current repository environment.
+- The implemented stage-4 baseline therefore uses a lightweight head-wise semantic attention across the **two graph views per node**, which preserves the dual-semantic fusion idea while staying trainable on CPU.
+- This is a stage-4 baseline implementation choice, not a claim of full paper-faithful global-module reproduction.
+
+### First completed stage-4 run
+
+- Experiment: `nyc_dual_graph_gru_baseline_sensitivity_67_quickcpu`
+- Track: 67-zone sensitivity dataset with official road-network distance graph
+- Config choices:
+  - graph hidden dim `16`
+  - temporal hidden dim `32`
+  - batch size `1024`
+  - max epochs `2`
+- Result:
+  - validation: `MAE 17.496307`, `RMSE 30.099709`
+  - test: `MAE 18.281325`, `RMSE 31.913867`
+
+### Interpretation
+
+- Stage 4 is now **implemented** as code and has completed a real graph-based run.
+- The first completed CPU-budget benchmark is **not competitive** with the 67-zone LSTM baseline (`test MAE 6.560578`, `RMSE 11.924477`).
+- This underperformance should not be overinterpreted:
+  - the stage-4 graph baseline is still intentionally simpler than the paper's full global module
+  - the completed benchmark used a deliberately tiny CPU training budget to keep the experiment practical in-session
+- The next engineering move is to tune this stage-4 baseline more seriously or move onward to the full LPE-STGTN implementation once the graph-baseline path is considered sufficiently exercised.
+
+## 2026-03-27 - Added a 67-zone sensitivity track and compared it against the 68-zone mainline
+
+### What was implemented
+
+- Added a parallel stage-1 config, `configs/data/nyc_yellow_2018_sensitivity_67.yaml`, that excludes both `103` and `104`.
+- Added matching stage-3 and baseline configs for the 67-zone sensitivity track.
+- Added `lpe-stgtn compare-zone-tracks` to summarize the main 68-zone track against the 67-zone sensitivity track from processed-data metadata, graph metadata, and baseline reports.
+
+### Real comparison results
+
+- Mainline track:
+  - `68` zones
+  - excluded `103`
+  - total pickups: `93,162,565`
+  - maximum road-network snap distance: `3859.50` feet
+  - persistence test: `MAE 12.563956`, `RMSE 23.411007`
+  - LSTM test: `MAE 6.654453`, `RMSE 12.291936`
+- Sensitivity track:
+  - `67` zones
+  - excluded `103` and `104`
+  - total pickups: `93,162,564`
+  - maximum road-network snap distance: `469.33` feet
+  - persistence test: `MAE 12.751478`, `RMSE 23.585068`
+  - LSTM test: `MAE 6.560578`, `RMSE 11.924477`
+
+### Interpretation
+
+- Excluding `104` removes only `1` pickup from the full 2018 demand total.
+- The 67-zone sensitivity track is much cleaner geometrically because it eliminates the `104` snap outlier from the road-network graph.
+- The persistence baseline becomes slightly worse on the 67-zone track, but the LSTM baseline becomes modestly better on the test split.
+- This makes the 67-zone track a strong practical development candidate for graph-based modeling, even though it is no longer aligned with the paper-reported Manhattan zone count of `68`.
+
+## 2026-03-27 - Focused investigation of Manhattan zones 103, 104, and 105
+
+### What was checked
+
+- Verified the official TLC lookup rows for `103`, `104`, and `105`, all labeled `Governor's Island/Ellis Island/Liberty Island`.
+- Recounted full-year 2018 Yellow Taxi pickup and dropoff activity for those three `LocationID` values across all 12 monthly parquet files.
+- Re-checked their polygon geometry size and road-network snapping behavior against the official citywide NYC Open Data `Centerline` graph.
+
+### Evidence collected
+
+- `103`:
+  - `0` pickups and `0` dropoffs in the full 2018 Yellow Taxi data.
+  - Snaps to a disconnected road-network component, not the main connected citywide component.
+- `104`:
+  - `1` pickup and `1` dropoff in the full 2018 Yellow Taxi data, both from one short self-trip in May 2018 (`104 -> 104`).
+  - Snaps to a disconnected road-network component when nearest-node snapping is unconstrained.
+  - Under the current default `largest_connected_component` snap policy, it becomes the largest snap-distance outlier in the study area at about `3859.5` feet.
+- `105`:
+  - `135` pickups and `92` dropoffs in the full 2018 Yellow Taxi data.
+  - Snaps directly into the main connected citywide road-network component with a small snap distance of about `13.7` feet.
+
+### Recommendation from this investigation
+
+- Do **not** replace `104` with `103` in the current provisional `68`-zone set.
+- `103` remains the strongest single-zone exclusion candidate because it has zero 2018 activity and is also road-network disconnected.
+- `104` is still a real problem for road-network distance construction, but swapping it out for `103` would make the study area worse, not better.
+- The best current interpretation is:
+  - keep `exclude 103` as the least-bad provisional `68`-zone rule for the mainline pipeline
+  - keep the `104` road-network workaround explicit
+  - continue to treat the exact paper-faithful Manhattan `68`-zone definition as unresolved
+
+## 2026-03-27 - Stage-3 distance graph upgraded to the official NYC road network
+
+### What was implemented
+
+- Added an official-road-network downloader in `src/lpe_stgtn/graphs/road_network.py` and a new CLI entrypoint, `lpe-stgtn download-road-network`, to fetch the NYC Open Data `Centerline` dataset (`inkn-q76z`) into `data/external/nyc_centerline/`.
+- Added a GeoJSON-based centerline parser, CRS projection step, road-network graph builder, nearest-node snapping logic, and shortest-path distance builder for the stage-3 distance graph.
+- Added `pyproj` and explicit `networkx` dependency declarations so the road-network graph path runs inside the repository `.venv`, not just in ad hoc system environments.
+- Updated the default graph config so stage 3 now uses `road_network_shortest_path` instead of the earlier centroid-Euclidean approximation.
+
+### Important implementation decisions
+
+- The road-network graph now uses the **citywide** official centerline asset rather than a borough-code-`1`-only subset. A Manhattan-only road subset left `LocationID 104` disconnected from the rest of the study area because some shortest paths for Manhattan zones rely on bridge segments outside borough code `1`.
+- Zone centroids are still computed from the TLC taxi-zone polygons, projected into `EPSG:2263`, and then snapped onto the official road network before shortest-path distances are computed.
+- The current default snap policy is `largest_connected_component`. This is explicit and config-driven because `LocationID 104` snaps onto a tiny disconnected island component in the official centerline graph under the current provisional 68-zone rule.
+
+### Why the disconnected-zone workaround is documented explicitly
+
+- Under the current stage-1 study area, `LocationID 104` is still included because only `103` was provisionally excluded to match the paper's reported `68` Manhattan zones.
+- In the official citywide centerline graph, `104` is not road-connected to the main Manhattan component, while `105` is.
+- Restricting snapping to the largest connected road component keeps the stage-1 `68`-zone tensor shape intact, but it is still a documented implementation workaround rather than a confirmed paper detail.
+- This strengthens the case that the exact paper-faithful Manhattan zone set is still unresolved and may not be equivalent to the current `exclude 103 only` hypothesis.
+
+## 2026-03-27 - Stage-3 graph construction pipeline implemented
+
+### What was implemented
+
+- Added a pure-Python taxi-zone shapefile/DBF reader in `src/lpe_stgtn/graphs/geometry_io.py` so graph construction does not depend on external GIS libraries in the current repository environment.
+- Added a distance-graph builder in `src/lpe_stgtn/graphs/distance.py` that:
+  - computes zone centroids from the taxi-zone polygons
+  - derives pairwise centroid distances in the taxi-zone shapefile CRS
+  - converts distances to weighted adjacency using the paper's exponential kernel form
+  - saves a normalized adjacency using `I + D^{-1/2} A D^{-1/2}`
+- Added an OD-flow graph builder in `src/lpe_stgtn/graphs/od_flow.py` that:
+  - scans the raw monthly parquet files
+  - filters trips whose pickup and dropoff endpoints are both inside the current stage-1 study area
+  - aggregates full-year OD counts
+  - converts counts to weighted adjacency using the paper's `(flow / flow_std)^2` form
+- Added a config-driven graph pipeline in `src/lpe_stgtn/graphs/pipeline.py`, a `build-graphs` CLI command, and a default graph config under `configs/graphs/nyc_manhattan_default.yaml`.
+
+### Stage-3 implementation choices
+
+- The paper describes the distance graph using real traffic-network proximity, but the repository currently approximates this with centroid Euclidean distance from the TLC taxi-zone polygons because no road-network asset is present locally.
+- The paper does not specify sigma and graph sparsification thresholds clearly. The default stage-3 build therefore:
+  - resolves sigma from the off-diagonal centroid-distance standard deviation
+  - leaves both graph thresholds at `0.0` rather than imposing undocumented sparsity
+- The graph outputs are aligned to the zone order already fixed by the stage-1 processed dataset so later model code can consume them directly without hidden reindexing.
+
 ## 2026-03-27 - Stage-2 baseline infrastructure added
 
 ### What was implemented
@@ -146,3 +301,20 @@
 - The repository implementation uses an explicit epsilon-clamped denominator for MAPE to avoid undefined behavior on zero-demand targets. This is an implementation default, not a confirmed paper detail.
 - Created a local `.venv` and completed an editable install with dev dependencies.
 - Verified the scaffold with `pytest`, `ruff check`, and a real-data inspection run against `yellow_tripdata_2018-01.parquet`.
+
+## 2026-03-31 - Final LPE-STGTN GPU Implementation
+
+### What was implemented
+
+- Updated `src/lpe_stgtn/data/datasets.py` to optionally return `Time-of-Day` and `Day-of-Week` metadata as inputs alongside demand tensors.
+- Created `src/lpe_stgtn/models/components/embedding.py` (`SpatioTemporalEmbedding`) to combine demand with temporal features globally across all nodes.
+- Built a standard scaled dot-product temporal `DynamicGraphGenerator` under `src/lpe_stgtn/models/components/dynamic_graph.py` to represent the paper's spatial-temporal pattern pool. 
+- Implemented `AttentionFreeTransformerLocal` in `src/lpe_stgtn/models/components/aft_local.py` simulating standard chronologically-bounded AFT over the local chronological window size of 4 without standard O(T^2) cost.
+- Expanded the true token-wise self-attention in `src/lpe_stgtn/models/components/attention.py` (`GlobalMultiHeadAttention`) to properly fuse semantic features extracted from Distance and OD Graphs.
+- Created the final integrated PyTorch `LPE_STGTN` class and a dedicated Python training runner (`lpe_stgtn_runner.py`) handling multi-input ingestion and ensuring explicit `.to(device)` mapping for seamless GPU orchestration on external infrastructure.
+- Exposed `make run-full-model` locally to test the architecture integrity on CPU before pushing to Git.
+
+### Why this addresses paper ambiguities
+
+- Several complex math structures for the exact parameter pool of spatial-time dynamically evolving graphs and the strict exact bounds of AFT-local windowing were under-specified. 
+- A scalable implementation for the attention-free transformer, symmetric sliding windows, and deterministic tensor concatenation provides an architecturally robust, research-defensible path forward.

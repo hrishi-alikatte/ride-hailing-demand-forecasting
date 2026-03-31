@@ -1,0 +1,24 @@
+experiment_name: nyc_lpe_stgtn_sensitivity_67_quickcpu
+processed_data_dir: data/processed/nyc_yellow_taxi_2018_manhattan_pickups_15min_sensitivity_67
+graph_data_dir: data/processed/nyc_yellow_taxi_2018_manhattan_pickups_15min_sensitivity_67/graphs
+
+model:
+  name: lpe_stgtn
+  hidden_dim: 16
+  attention_heads: 4
+  aft_window_size: 4
+  gru_layers: 1
+  dropout: 0.0
+
+trainer:
+  batch_size: 1024
+  max_epochs: 2
+  early_stopping_patience: 1
+  gradient_clip_norm: 1.0
+
+optimizer:
+  learning_rate: 0.001
+
+artifacts:
+  report_dir: artifacts/reports/models
+  checkpoint_dir: artifacts/checkpoints/models

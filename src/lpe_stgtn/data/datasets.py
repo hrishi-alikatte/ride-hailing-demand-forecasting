@@ -45,7 +45,9 @@ class ProcessedDatasetBundle:
         except KeyError as error:
             raise ValueError(f"Unsupported split: {split}") from error
 
-    def build_windows(self, split: str, *, normalized: bool) -> tuple[np.ndarray, np.ndarray]:
+    def build_windows(
+        self, split: str, *, normalized: bool, include_time_features: bool = False
+    ) -> tuple[np.ndarray | tuple[np.ndarray, np.ndarray, np.ndarray], np.ndarray]:
         """Materialize `(x, y)` windows for the requested split."""
         source = self.normalized_demand if normalized else self.demand
         start_indices = self.sample_start_indices(split)
@@ -56,14 +58,22 @@ class ProcessedDatasetBundle:
         y_windows = np.stack(
             [
                 source[
-                    start + self.history_steps : start
-                    + self.history_steps
-                    + self.forecast_steps
+                    start + self.history_steps : start + self.history_steps + self.forecast_steps
                 ]
                 for start in start_indices
             ],
             axis=0,
         )
+        if include_time_features:
+            x_tod_windows = np.stack(
+                [self.time_of_day[start : start + self.history_steps] for start in start_indices],
+                axis=0,
+            )
+            x_dow_windows = np.stack(
+                [self.day_of_week[start : start + self.history_steps] for start in start_indices],
+                axis=0,
+            )
+            return (x_windows, x_tod_windows, x_dow_windows), y_windows
         return x_windows, y_windows
 
     def denormalize(self, array: np.ndarray) -> np.ndarray:
@@ -71,13 +81,21 @@ class ProcessedDatasetBundle:
         return array * self.normalization_std + self.normalization_mean
 
 
-class WindowedDemandDataset(Dataset[tuple[torch.Tensor, torch.Tensor]]):
+class WindowedDemandDataset(Dataset):
     """Lazy supervised dataset over the processed demand timeline."""
 
-    def __init__(self, bundle: ProcessedDatasetBundle, *, split: str, normalized: bool) -> None:
+    def __init__(
+        self,
+        bundle: ProcessedDatasetBundle,
+        *,
+        split: str,
+        normalized: bool,
+        include_time_features: bool = False,
+    ) -> None:
         self.bundle = bundle
         self.split = split
         self.normalized = normalized
+        self.include_time_features = include_time_features
         self.start_indices = bundle.sample_start_indices(split)
 
     def __len__(self) -> int:
@@ -88,15 +106,23 @@ class WindowedDemandDataset(Dataset[tuple[torch.Tensor, torch.Tensor]]):
         source = self.bundle.normalized_demand if self.normalized else self.bundle.demand
         x_window = source[start : start + self.bundle.history_steps]
         y_window = source[
-            start
-            + self.bundle.history_steps : start
+            start + self.bundle.history_steps : start
             + self.bundle.history_steps
             + self.bundle.forecast_steps
         ]
-        return (
-            torch.as_tensor(x_window, dtype=torch.float32),
-            torch.as_tensor(y_window, dtype=torch.float32),
-        )
+        y_tensor = torch.as_tensor(y_window, dtype=torch.float32)
+
+        if self.include_time_features:
+            tod_window = self.bundle.time_of_day[start : start + self.bundle.history_steps]
+            dow_window = self.bundle.day_of_week[start : start + self.bundle.history_steps]
+            x_tuple = (
+                torch.as_tensor(x_window, dtype=torch.float32),
+                torch.as_tensor(tod_window, dtype=torch.long),
+                torch.as_tensor(dow_window, dtype=torch.long),
+            )
+            return x_tuple, y_tensor
+
+        return (torch.as_tensor(x_window, dtype=torch.float32), y_tensor)
 
 
 def load_processed_dataset(root_dir: Path) -> ProcessedDatasetBundle:
