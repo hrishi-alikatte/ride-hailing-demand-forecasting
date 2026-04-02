@@ -172,6 +172,22 @@ def train_lpe_stgtn(
     patience = int(trainer_config.get("early_stopping_patience", 5))
     gradient_clip_norm = trainer_config.get("gradient_clip_norm")
 
+    scheduler_config = trainer_config.get("scheduler", {})
+    scheduler_type = scheduler_config.get("type")
+    scheduler = None
+    if scheduler_type == "ReduceLROnPlateau":
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer, 
+            mode="min", 
+            factor=float(scheduler_config.get("factor", 0.5)), 
+            patience=int(scheduler_config.get("patience", 2)),
+        )
+    elif scheduler_type == "CosineAnnealingLR":
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            optimizer, 
+            T_max=int(scheduler_config.get("T_max", max_epochs)),
+        )
+
     best_state_dict: dict[str, torch.Tensor] | None = None
     best_validation_mae = float("inf")
     epochs_without_improvement = 0
@@ -212,6 +228,12 @@ def train_lpe_stgtn(
             }
         else:
             epochs_without_improvement += 1
+
+        if scheduler is not None:
+            if isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
+                scheduler.step(validation_metrics["mae"])
+            else:
+                scheduler.step()
 
         if epochs_without_improvement >= patience:
             break
