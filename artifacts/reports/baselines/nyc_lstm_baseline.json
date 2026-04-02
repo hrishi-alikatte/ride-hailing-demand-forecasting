@@ -1,0 +1,192 @@
+{
+  "experiment_name": "nyc_lstm_baseline",
+  "model_name": "lstm",
+  "experiment_config_path": "configs\\experiments\\nyc_lstm_baseline.yaml",
+  "training_config_path": "D:\\ride-hailing-demand-forecasting-main (1)\\configs\\training\\default.yaml",
+  "processed_data_dir": "D:\\ride-hailing-demand-forecasting-main (1)\\data\\processed\\nyc_yellow_taxi_2018_manhattan_pickups_15min",
+  "metrics": {
+    "validation": {
+      "mae": 6.062485794049473,
+      "rmse": 10.723726742284411,
+      "mape": 68824.49498672638
+    },
+    "test": {
+      "mae": 6.655354713257859,
+      "rmse": 12.29092183343882,
+      "mape": 78197.40108023142
+    }
+  },
+  "checkpoint_path": "D:\\ride-hailing-demand-forecasting-main (1)\\artifacts\\checkpoints\\baselines\\nyc_lstm_baseline.pt",
+  "training_history": [
+    {
+      "epoch": 1,
+      "train_loss": 0.2138949780297497,
+      "validation_loss": 0.15497669516639276,
+      "validation_mae": 7.677684408049568,
+      "validation_rmse": 13.640265767321793,
+      "validation_mape": 153560.44884609606
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.14801307724601953,
+      "validation_loss": 0.1346184975044294,
+      "validation_mae": 6.661308016077246,
+      "validation_rmse": 11.859332032312455,
+      "validation_mape": 108636.71321464454
+    },
+    {
+      "epoch": 3,
+      "train_loss": 0.13880451680316752,
+      "validation_loss": 0.1295687437057495,
+      "validation_mae": 6.416563621349636,
+      "validation_rmse": 11.33528611042986,
+      "validation_mape": 93163.32209834972
+    },
+    {
+      "epoch": 4,
+      "train_loss": 0.134013752150137,
+      "validation_loss": 0.12895186841487885,
+      "validation_mae": 6.387645464726397,
+      "validation_rmse": 11.274943148496972,
+      "validation_mape": 89366.69525505531
+    },
+    {
+      "epoch": 5,
+      "train_loss": 0.13093456578381518,
+      "validation_loss": 0.1265918800776655,
+      "validation_mae": 6.269539613832646,
+      "validation_rmse": 11.02937600853724,
+      "validation_mape": 77821.95671624348
+    },
+    {
+      "epoch": 6,
+      "train_loss": 0.12869302511758718,
+      "validation_loss": 0.12480812966823578,
+      "validation_mae": 6.178975108551699,
+      "validation_rmse": 10.815552045139267,
+      "validation_mape": 90840.22050099593
+    },
+    {
+      "epoch": 7,
+      "train_loss": 0.1273778907977339,
+      "validation_loss": 0.12273564785718918,
+      "validation_mae": 6.0781018438199625,
+      "validation_rmse": 10.653076226095061,
+      "validation_mape": 78408.94012484381
+    },
+    {
+      "epoch": 8,
+      "train_loss": 0.125911914853883,
+      "validation_loss": 0.12881306369196285,
+      "validation_mae": 6.381356414684519,
+      "validation_rmse": 11.247603334221107,
+      "validation_mape": 70049.80993860266
+    },
+    {
+      "epoch": 9,
+      "train_loss": 0.12480511998695443,
+      "validation_loss": 0.12489059580997987,
+      "validation_mae": 6.184810082384422,
+      "validation_rmse": 10.751483931051535,
+      "validation_mape": 83620.48398119622
+    },
+    {
+      "epoch": 10,
+      "train_loss": 0.12371541706896118,
+      "validation_loss": 0.12241733101281253,
+      "validation_mae": 6.062485794049473,
+      "validation_rmse": 10.723726742284411,
+      "validation_mape": 68824.49498672638
+    }
+  ],
+  "dataset": {
+    "history_steps": 12,
+    "forecast_steps": 12,
+    "num_zones": 68,
+    "normalization_mean": 40.38077926635742,
+    "normalization_std": 49.618228912353516
+  },
+  "graph_data_dir": null,
+  "graph_summary": null,
+  "study_area_summary": {
+    "lookup_path": "D:\\ride-hailing-demand-forecasting-main (1)\\data\\external\\taxi_zone_lookup.csv",
+    "borough": "Manhattan",
+    "available_zone_count": 69,
+    "included_zone_count": 68,
+    "expected_zone_count": 68,
+    "matches_expected_zone_count": true,
+    "excluded_location_ids": [
+      103
+    ],
+    "included_location_ids": [
+      4,
+      12,
+      13,
+      24,
+      41,
+      42,
+      43,
+      45,
+      48,
+      50,
+      68,
+      74,
+      75,
+      79,
+      87,
+      88,
+      90,
+      100,
+      104,
+      105,
+      107,
+      113,
+      114,
+      116,
+      120,
+      125,
+      127,
+      128,
+      137,
+      140,
+      141,
+      142,
+      143,
+      144,
+      148,
+      151,
+      152,
+      153,
+      158,
+      161,
+      162,
+      163,
+      164,
+      166,
+      170,
+      186,
+      194,
+      202,
+      209,
+      211,
+      224,
+      229,
+      230,
+      231,
+      232,
+      233,
+      234,
+      236,
+      237,
+      238,
+      239,
+      243,
+      244,
+      246,
+      249,
+      261,
+      262,
+      263
+    ]
+  }
+}

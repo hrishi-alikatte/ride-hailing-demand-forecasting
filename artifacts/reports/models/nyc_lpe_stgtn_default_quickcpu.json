@@ -1,0 +1,133 @@
+{
+  "experiment_name": "nyc_lpe_stgtn_default_quickcpu",
+  "model_name": "lpe_stgtn",
+  "experiment_config_path": "configs\\experiments\\nyc_lpe_stgtn_default_quickcpu.yaml",
+  "training_config_path": "D:\\ride-hailing-demand-forecasting-main (1)\\configs\\training\\default.yaml",
+  "processed_data_dir": "D:\\ride-hailing-demand-forecasting-main (1)\\data\\processed\\nyc_yellow_taxi_2018_manhattan_pickups_15min",
+  "metrics": {
+    "validation": {
+      "mae": 11.24306670642912,
+      "rmse": 20.573827949819364,
+      "mape": 195021.98217160735
+    },
+    "test": {
+      "mae": 11.558026674078334,
+      "rmse": 21.58515404749202,
+      "mape": 200496.1216827501
+    }
+  },
+  "checkpoint_path": "D:\\ride-hailing-demand-forecasting-main (1)\\artifacts\\checkpoints\\models\\nyc_lpe_stgtn_default_quickcpu.pt",
+  "training_history": [
+    {
+      "epoch": 1,
+      "train_loss": 0.2729477257955642,
+      "validation_loss": 0.24568907916545868,
+      "validation_mae": 12.156851955090733,
+      "validation_rmse": 22.166848046344086,
+      "validation_mape": 100358.04311297026
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.26219957215445383,
+      "validation_loss": 0.22727055634771073,
+      "validation_mae": 11.24306670642912,
+      "validation_rmse": 20.573827949819364,
+      "validation_mape": 195021.98217160735
+    }
+  ],
+  "dataset": {
+    "history_steps": 12,
+    "forecast_steps": 12,
+    "num_zones": 68
+  },
+  "graph_data_dir": "D:\\ride-hailing-demand-forecasting-main (1)\\data\\processed\\nyc_yellow_taxi_2018_manhattan_pickups_15min\\graphs",
+  "graph_summary": {
+    "num_zones": 68,
+    "distance_method": "road_network_shortest_path",
+    "distance_sigma": 6463.28945156891,
+    "distance_nonzero_edges": 4556,
+    "od_flow_nonzero_edges": 4310,
+    "snap_component_policy": "largest_connected_component"
+  },
+  "study_area_summary": {
+    "lookup_path": "D:\\ride-hailing-demand-forecasting-main (1)\\data\\external\\taxi_zone_lookup.csv",
+    "borough": "Manhattan",
+    "available_zone_count": 69,
+    "included_zone_count": 68,
+    "expected_zone_count": 68,
+    "matches_expected_zone_count": true,
+    "excluded_location_ids": [
+      103
+    ],
+    "included_location_ids": [
+      4,
+      12,
+      13,
+      24,
+      41,
+      42,
+      43,
+      45,
+      48,
+      50,
+      68,
+      74,
+      75,
+      79,
+      87,
+      88,
+      90,
+      100,
+      104,
+      105,
+      107,
+      113,
+      114,
+      116,
+      120,
+      125,
+      127,
+      128,
+      137,
+      140,
+      141,
+      142,
+      143,
+      144,
+      148,
+      151,
+      152,
+      153,
+      158,
+      161,
+      162,
+      163,
+      164,
+      166,
+      170,
+      186,
+      194,
+      202,
+      209,
+      211,
+      224,
+      229,
+      230,
+      231,
+      232,
+      233,
+      234,
+      236,
+      237,
+      238,
+      239,
+      243,
+      244,
+      246,
+      249,
+      261,
+      262,
+      263
+    ]
+  }
+}
