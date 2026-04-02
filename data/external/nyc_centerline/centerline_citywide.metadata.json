@@ -1,0 +1,9 @@
+{
+  "source": "NYC Open Data",
+  "dataset_id": "inkn-q76z",
+  "dataset_name": "Centerline",
+  "borough_code": null,
+  "feature_count": 122266,
+  "request_url": "https://data.cityofnewyork.us/resource/inkn-q76z.geojson?%24select=the_geom%2Cphysicalid%2Ctrafdir%2Csegmentlength%2Cboroughcode&%24order=physicalid&%24limit=122266",
+  "downloaded_at_utc": "2026-04-01T19:47:47.508643+00:00"
+}
