@@ -1,5 +1,5 @@
 experiment_name: "nyc_lpe_stgtn_university_gpu_run"
-processed_data_dir: "data/processed/nyc_yellow_2018"
+processed_data_dir: "data/processed/nyc_yellow_taxi_2018_manhattan_pickups_15min"
 
 model:
   name: "lpe_stgtn"
