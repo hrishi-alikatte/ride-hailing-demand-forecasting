@@ -1,0 +1,35 @@
+experiment_name: "nyc_lpe_stgtn_university_gpu_run"
+processed_data_dir: "data/processed/nyc_yellow_2018"
+
+model:
+  name: "lpe_stgtn"
+  hidden_dim: 64
+  attention_heads: 4
+  aft_window_size: 4
+  gru_layers: 1
+  dropout: 0.1
+
+trainer:
+  # Reduced batch size ensures we safely clear 16% GPU fraction (approx 3.8GB on RTX6000)
+  # and the aggressive 8 GB System RAM limit.
+  batch_size: 16       
+  max_epochs: 30       # Safely finishes inside the 4-hour limit
+  early_stopping_patience: 4
+  gradient_clip_norm: 5.0
+  scheduler:
+    type: "ReduceLROnPlateau"
+    factor: 0.5
+    patience: 2
+
+optimizer:
+  learning_rate: 0.001
+
+artifacts:
+  report_dir: "artifacts/reports/models"
+  checkpoint_dir: "artifacts/checkpoints"
+
+runtime:
+  device: "auto"
+
+reproducibility:
+  seed: 2026
