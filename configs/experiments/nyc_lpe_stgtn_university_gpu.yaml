@@ -13,8 +13,8 @@ trainer:
   # Reduced batch size ensures we safely clear 16% GPU fraction (approx 3.8GB on RTX6000)
   # and the aggressive 8 GB System RAM limit.
   batch_size: 16       
-  max_epochs: 30       # Safely finishes inside the 4-hour limit
-  early_stopping_patience: 4
+  max_epochs: 200
+  early_stopping_patience: 50
   gradient_clip_norm: 5.0
   scheduler:
     type: "ReduceLROnPlateau"
