@@ -13,10 +13,10 @@ distance_graph:
   road_network_target_crs: EPSG:2263
   snap_component_policy: largest_connected_component
   sigma: null
-  epsilon_threshold: 0.0
+  epsilon_threshold: 0.05
 
 od_flow_graph:
-  epsilon_threshold: 0.0
+  epsilon_threshold: 0.05
 
 notes:
   - This graph config is the 67-zone sensitivity counterpart to the main 68-zone Manhattan graph build.
