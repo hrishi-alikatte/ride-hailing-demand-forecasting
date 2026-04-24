@@ -31,7 +31,7 @@ class LPE_STGTN(nn.Module):
         attention_heads: int = 4,
         aft_window_size: int = 4,
         gru_layers: int = 1,
-        dropout: float = 0.0,
+        dropout: float = 0.0, #change to 0.2
     ) -> None:
         super().__init__()
         self.num_zones = num_zones

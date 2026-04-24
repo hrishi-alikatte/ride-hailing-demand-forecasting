@@ -65,6 +65,27 @@ def main() -> int:
     sweep_start = time.time()
 
     for i, cfg in enumerate(configs, 1):
+        report_file = project_root / "artifacts" / "reports" / "sweep" / f"sweep_{cfg.stem}.json"
+        if report_file.exists():
+            print(f"\n{'=' * 60}")
+            print(f"[{i}/{len(configs)}] Skipping: {cfg.name} (already completed)")
+            print(f"{'=' * 60}")
+            try:
+                import json
+                with open(report_file) as f:
+                    data = json.load(f)
+                results.append({
+                    "config": cfg.name,
+                    "status": "success",
+                    "mae": data["metrics"]["test"]["mae"],
+                    "rmse": data["metrics"]["test"]["rmse"],
+                    "mape": data["metrics"]["test"]["mape"],
+                    "elapsed": 0.0,
+                })
+            except Exception:
+                pass
+            continue
+
         print(f"\n{'=' * 60}")
         print(f"[{i}/{len(configs)}] Starting: {cfg.name}")
         print(f"{'=' * 60}")
