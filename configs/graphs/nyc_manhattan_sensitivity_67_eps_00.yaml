@@ -1,0 +1,24 @@
+processed_data_dir: data/processed/nyc_yellow_taxi_2018_manhattan_pickups_15min_sensitivity_67
+raw_glob: data/yellow_tripdata_2018-*.parquet
+taxi_zone_shapefile_path: data/external/taxi_zones/taxi_zones.shp
+pickup_time_column: tpep_pickup_datetime
+origin_zone_column: PULocationID
+destination_zone_column: DOLocationID
+output_subdir: data/processed/nyc_yellow_taxi_2018_manhattan_pickups_15min_sensitivity_67/graphs_eps_00
+distance_graph:
+  distance_method: road_network_shortest_path
+  road_network_geojson_path: data/external/nyc_centerline/centerline_citywide.geojson
+  road_network_source_crs: OGC:CRS84
+  road_network_target_crs: EPSG:2263
+  snap_component_policy: largest_connected_component
+  sigma: null
+  epsilon_threshold: 0.0
+od_flow_graph:
+  epsilon_threshold: 0.0
+notes:
+- This graph config is the 67-zone sensitivity counterpart to the main 68-zone Manhattan
+  graph build.
+- It excludes LocationID values 103 and 104 through the processed dataset contract
+  rather than adding more graph-specific filtering.
+- The default stage-3 distance graph uses shortest-path distances on the official
+  NYC Open Data Centerline road network.
