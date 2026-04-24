@@ -71,12 +71,16 @@ def main():
         exp_cfg = f"configs/experiments/sweep_epsilon/run_eps_{eps_name}.yaml"
         print(f"\nTraining model for epsilon {eps_name} using {exp_cfg}...")
         
+        import os
+        env = os.environ.copy()
+        env["PYTHONPATH"] = "src"
+        
         # Use python -m to run it
         cmd = [
             sys.executable, "scripts/run_sweep.py",
             "--config", exp_cfg
         ]
-        result = subprocess.run(cmd, env={"PYTHONPATH": "src"})
+        result = subprocess.run(cmd, env=env)
         if result.returncode != 0:
             print(f"❌ Training failed for epsilon {eps_name}")
             return 1
