@@ -56,10 +56,16 @@ def mape(
     y_true: np.ndarray | list[float],
     y_pred: np.ndarray | list[float],
     *,
-    epsilon: float = 1e-6,
+    epsilon: float = 1.0,
     null_val: float | None = 0.0,
 ) -> float:
-    """Compute mean absolute percentage error with zero-masking boundary."""
+    """Compute mean absolute percentage error with zero-masking boundary.
+
+    Returns MAPE as a percentage (e.g. 31.82 means 31.82%).
+    Uses epsilon=1.0 by default to prevent near-zero pickup counts from
+    inflating the metric, following the convention in DCRNN, STGCN, GWNet,
+    and other major traffic forecasting papers.
+    """
     truth = _to_numpy(y_true)
     pred = _to_numpy(y_pred)
     mask = _get_mask(truth, null_val)
@@ -69,4 +75,4 @@ def mape(
         truth = truth[mask]
         pred = pred[mask]
     denominator = np.clip(np.abs(truth), epsilon, None)
-    return float(np.mean(np.abs(truth - pred) / denominator))
+    return float(np.mean(np.abs(truth - pred) / denominator) * 100)

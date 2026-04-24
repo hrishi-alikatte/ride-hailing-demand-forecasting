@@ -1,7 +1,7 @@
 PYTHON ?= python3
 SRC_PATHS := src tests scripts
 
-.PHONY: help venv install format lint test inspect-data prepare-data download-road-network build-graphs run-baseline run-full-model compare-zone-tracks prepare-dirs
+.PHONY: help venv install format lint test inspect-data prepare-data download-road-network build-graphs run-baseline run-full-model compare-zone-tracks prepare-dirs run-sweep run-sweep-dry compile-results
 
 help:
 	@echo "Available targets:"
@@ -18,6 +18,9 @@ help:
 	@echo "  make run-full-model  Run the final LPE-STGTN graph model"
 	@echo "  make compare-zone-tracks  Compare the main 68-zone track with the 67-zone sensitivity track"
 	@echo "  make prepare-dirs  Create derived-data and artifact directories"
+	@echo "  make run-sweep     Run all sweep configs sequentially"
+	@echo "  make run-sweep-dry Validate sweep configs without training"
+	@echo "  make compile-results  Generate final benchmark comparison report"
 
 venv:
 	$(PYTHON) -m venv .venv
@@ -58,4 +61,14 @@ compare-zone-tracks:
 
 prepare-dirs:
 	mkdir -p artifacts/checkpoints artifacts/logs artifacts/reports
+	mkdir -p artifacts/checkpoints/sweep artifacts/reports/sweep
 	mkdir -p data/external data/interim data/processed
+
+run-sweep:
+	PYTHONPATH=src $(PYTHON) scripts/run_sweep.py
+
+run-sweep-dry:
+	PYTHONPATH=src $(PYTHON) scripts/run_sweep.py --dry-run
+
+compile-results:
+	PYTHONPATH=src $(PYTHON) scripts/compile_results.py

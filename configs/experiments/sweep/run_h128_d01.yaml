@@ -1,0 +1,35 @@
+experiment_name: "sweep_run_h128_d01"
+processed_data_dir: "data/processed/nyc_yellow_taxi_2018_manhattan_pickups_15min_sensitivity_67"
+graph_data_dir: "data/processed/nyc_yellow_taxi_2018_manhattan_pickups_15min_sensitivity_67/graphs"
+
+model:
+  name: "lpe_stgtn"
+  hidden_dim: 128
+  attention_heads: 4
+  aft_window_size: 4
+  gru_layers: 1
+  dropout: 0.1
+
+trainer:
+  batch_size: 16
+  max_epochs: 100
+  early_stopping_patience: 15
+  gradient_clip_norm: 5.0
+  scheduler:
+    type: "ReduceLROnPlateau"
+    factor: 0.5
+    patience: 3
+
+optimizer:
+  learning_rate: 0.001
+
+artifacts:
+  report_dir: "artifacts/reports/sweep"
+  checkpoint_dir: "artifacts/checkpoints/sweep"
+
+runtime:
+  device: "auto"
+
+reproducibility:
+  seed: 2026
+  deterministic: true

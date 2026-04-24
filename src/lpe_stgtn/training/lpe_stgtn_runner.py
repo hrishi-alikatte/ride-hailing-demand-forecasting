@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import time
 from pathlib import Path
 from typing import Any
 
@@ -83,6 +84,7 @@ def run_lpe_stgtn_experiment(
     if model_name != "lpe_stgtn":
         raise ValueError(f"Unsupported model for this runner: {model_name}")
 
+    wall_clock_start = time.time()
     metrics, checkpoint_path, training_history = train_lpe_stgtn(
         bundle,
         graph_bundle=graph_bundle,
@@ -93,6 +95,7 @@ def run_lpe_stgtn_experiment(
         checkpoint_dir=checkpoint_dir,
         device_name=str(merged_config.get("runtime", {}).get("device", "auto")),
     )
+    wall_clock_seconds = time.time() - wall_clock_start
 
     report_path = report_dir / f"{experiment_name}.json"
     report_payload = {
@@ -104,6 +107,14 @@ def run_lpe_stgtn_experiment(
         "metrics": metrics,
         "checkpoint_path": str(checkpoint_path) if checkpoint_path is not None else None,
         "training_history": training_history,
+        "wall_clock_seconds": round(wall_clock_seconds, 1),
+        "wall_clock_human": f"{int(wall_clock_seconds // 60)}m {int(wall_clock_seconds % 60)}s",
+        "hyperparameters": {
+            "hidden_dim": model_config.get("hidden_dim"),
+            "dropout": model_config.get("dropout"),
+            "learning_rate": _require_mapping(merged_config, "optimizer").get("learning_rate"),
+            "batch_size": _require_mapping(merged_config, "trainer").get("batch_size"),
+        },
         "dataset": {
             "history_steps": bundle.history_steps,
             "forecast_steps": bundle.forecast_steps,
@@ -209,6 +220,7 @@ def train_lpe_stgtn(
             criterion=criterion,
             device=device,
         )
+        current_lr = optimizer.param_groups[0]["lr"]
         history.append(
             {
                 "epoch": epoch,
@@ -217,6 +229,7 @@ def train_lpe_stgtn(
                 "validation_mae": validation_metrics["mae"],
                 "validation_rmse": validation_metrics["rmse"],
                 "validation_mape": validation_metrics["mape"],
+                "learning_rate": current_lr,
             }
         )
 

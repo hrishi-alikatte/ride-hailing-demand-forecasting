@@ -318,3 +318,37 @@
 
 - Several complex math structures for the exact parameter pool of spatial-time dynamically evolving graphs and the strict exact bounds of AFT-local windowing were under-specified. 
 - A scalable implementation for the attention-free transformer, symmetric sliding windows, and deterministic tensor concatenation provides an architecturally robust, research-defensible path forward.
+
+## 2026-04-24 - Final Stage: MAPE Fix & Hyperparameter Sweep
+
+### MAPE metric fix
+
+The MAPE evaluation was producing meaningless values (36761%, 40771%) because:
+- `epsilon=1e-6` in the denominator allowed denormalized near-zero pickup counts (e.g. 0.001) to produce individual MAPE contributions exceeding 500%.
+- The zero-mask (`null_val=0.0`) correctly filters exact zeros, but floating-point denormalization artifacts pass through.
+
+**Fix applied**: Changed `epsilon` default from `1e-6` to `1.0` and added `× 100` to return MAPE as a percentage. This matches the convention used by DCRNN, STGCN, ASTGCN, GWNet, and the major traffic forecasting literature. All previous MAPE numbers are now invalid; MAE and RMSE remain unaffected.
+
+### Intelligence from collaborator's repository
+
+Analysis of the collaborator's experiment configs revealed:
+- `hidden_dim=128` was systematically tested (double the paper's 64)
+- Dropout values 0.0, 0.1, 0.15, 0.2 were explored
+- Learning rates 0.001, 0.0005, 0.0003 were tested
+- Batch sizes 16, 32, 64 were used
+- Graph epsilon 0.012 was used for `paper_strict` graphs
+- A `paper_strict` dataset using `pickup_and_dropoff` filtering was created
+
+### Hyperparameter sweep design (4-hour GPU budget)
+
+Five experiments selected to form a 2×2 factorial on (hidden_dim, dropout) plus one interpolation:
+
+| Run | hidden_dim | dropout | LR | batch_size | Rationale |
+|-----|-----------|---------|------|-----------|-----------|
+| run_baseline | 64 | 0.1 | 0.001 | 16 | Reproduce lost best run |
+| run_h128_d01 | 128 | 0.1 | 0.001 | 16 | Isolate hidden_dim effect |
+| run_h128_d015 | 128 | 0.15 | 0.0005 | 32 | Interpolated dropout |
+| run_h128_d02 | 128 | 0.2 | 0.0005 | 32 | Collaborator's most-tested combo |
+| run_h64_d02 | 64 | 0.2 | 0.001 | 16 | Isolate dropout effect |
+
+All on 67-zone track, existing dense graphs (ε=0.0), max_epochs=100, patience=15.
