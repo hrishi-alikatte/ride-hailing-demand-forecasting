@@ -7,7 +7,7 @@ import math
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import networkx as nx
@@ -124,7 +124,7 @@ def download_centerline_geojson(
         "borough_code": borough_code,
         "feature_count": feature_count,
         "request_url": request_url,
-        "downloaded_at_utc": datetime.now(UTC).isoformat(),
+        "downloaded_at_utc": datetime.now(timezone.utc).isoformat(),
     }
     metadata_path.write_text(json.dumps(metadata, indent=2), encoding="utf-8")
     return RoadNetworkDownloadSummary(
