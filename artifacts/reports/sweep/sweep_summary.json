@@ -1,0 +1,42 @@
+[
+  {
+    "config": "run_baseline.yaml",
+    "status": "success",
+    "mae": 7.14603959847095,
+    "rmse": 12.149795278075892,
+    "mape": 32.61194092452321,
+    "elapsed": 0.0
+  },
+  {
+    "config": "run_h128_d01.yaml",
+    "status": "success",
+    "mae": 7.176244353001797,
+    "rmse": 12.133925325991164,
+    "mape": 32.61281922220206,
+    "elapsed": 0.0
+  },
+  {
+    "config": "run_h128_d015.yaml",
+    "status": "success",
+    "mae": 7.115598833911737,
+    "rmse": 12.08732896606864,
+    "mape": 32.411519390342605,
+    "elapsed": 0.0
+  },
+  {
+    "config": "run_h128_d02.yaml",
+    "status": "success",
+    "mae": 7.147892139375793,
+    "rmse": 12.124199577034094,
+    "mape": 32.92627278673281,
+    "elapsed": 0.0
+  },
+  {
+    "config": "run_h64_d02.yaml",
+    "status": "success",
+    "mae": 7.160739796752108,
+    "rmse": 12.19045339067384,
+    "mape": 33.18976956468018,
+    "elapsed": 0.0
+  }
+]
