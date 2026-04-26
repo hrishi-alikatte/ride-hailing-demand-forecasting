@@ -541,8 +541,8 @@
       "learning_rate": 7.8125e-06
     }
   ],
-  "wall_clock_seconds": 1308.3,
-  "wall_clock_human": "21m 48s",
+  "wall_clock_seconds": 1307.4,
+  "wall_clock_human": "21m 47s",
   "hyperparameters": {
     "hidden_dim": 128,
     "dropout": 0.15,
