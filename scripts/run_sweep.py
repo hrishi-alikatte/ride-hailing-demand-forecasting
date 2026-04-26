@@ -65,7 +65,15 @@ def main() -> int:
     sweep_start = time.time()
 
     for i, cfg in enumerate(configs, 1):
-        report_file = project_root / "artifacts" / "reports" / "sweep" / f"sweep_{cfg.stem}.json"
+        from lpe_stgtn.config import load_yaml
+        try:
+            config = load_yaml(cfg)
+            report_dir = project_root / config.get("artifacts", {}).get("report_dir", "artifacts/reports")
+            exp_name = config.get("experiment_name", cfg.stem)
+            report_file = report_dir / f"{exp_name}.json"
+        except Exception:
+            report_file = project_root / "artifacts" / "reports" / "sweep" / f"sweep_{cfg.stem}.json"
+
         if report_file.exists():
             print(f"\n{'=' * 60}")
             print(f"[{i}/{len(configs)}] Skipping: {cfg.name} (already completed)")
