@@ -119,13 +119,13 @@ def plot_weather_impact(out_dir: Path):
 def plot_benchmark_progression(out_dir: Path):
     """Visual 4: Benchmark Progression."""
     stages = ['Persistence\nBaseline', 'LSTM\nBaseline', 'Phase 1\n(Unoptimized)', 'Phase 2\n(Sparsified)', 'Paper Target\n(Reported)']
-    mapes = [35.00, 34.00, 33.98, 32.41, 31.82]
+    mapes = [66.07, 75.64, 33.98, 32.41, 31.82]
     colors = ['#c7c7c7', '#c7c7c7', '#ffbb78', '#2ca02c', '#9467bd']
     
     plt.figure(figsize=(9, 5))
     bars = plt.bar(stages, mapes, color=colors, edgecolor='black', width=0.6)
     
-    plt.ylim(31.0, 35.5)
+    plt.ylim(30.0, 80.0)
     plt.ylabel('Test MAPE (%)')
     plt.title('LPE-STGTN Project Performance Progression')
     plt.grid(axis='y', alpha=0.3, linestyle='--')
