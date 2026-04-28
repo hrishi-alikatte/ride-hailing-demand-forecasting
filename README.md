@@ -23,7 +23,7 @@ Through systematic reproduction, topological corrections, and extensive ablation
 | *Original Paper Target* | *5.66* | *10.40* | *31.82* |
 
 **Major Optimization Breakthroughs:**
-1. **Topology Correction:** Identified and removed a severe geographic anomaly (TLC Zone 104 - Governor's Island) which injected 3,860+ feet of phantom distance into the spatial graph, drastically improving convergence stability.
+1. **Topology Correction:** Identified and removed a severe geographic anomaly (TLC Zone 104 - Ellis Island) which injected 3,860+ feet of phantom distance into the spatial graph, drastically improving convergence stability.
 2. **Graph Sparsification:** Applied $\epsilon$-thresholding ($\epsilon=0.05$) to prune noisy, near-zero cross-city edges in the adjacency matrix, proving that spatial data quality significantly outperforms raw architectural capacity.
 
 ---
