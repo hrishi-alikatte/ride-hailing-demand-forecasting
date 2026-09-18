@@ -95,7 +95,42 @@ The LPE-STGTN processes historical demand through two parallel pathways:
 
 ## 📖 Citation & Acknowledgements
 
-This project is a reimplementation based on the research presented in:
-> J. Zhang *et al.*, "Local Perception-Enhanced Spatial-Temporal Evolving Graph Transformer Network for Citywide Demand Prediction of Taxi and Ride-Hailing," *IEEE Transactions on Intelligent Transportation Systems*, vol. 25, no. 11, Nov. 2024.
+### 📚 Citation
 
-Special thanks to the open-source community for the `OSMnx` and `NetworkX` libraries which powered the spatial graph routing.
+This project is an independent PyTorch reimplementation of the **Local Perception-Enhanced Spatial-Temporal Evolving Graph Transformer Network (LPE-STGTN)** proposed by Zhang *et al.*
+
+If you use this implementation in academic, research, or educational work, please cite the **original publication** and clearly distinguish this reimplementation from the original authors' implementation.
+
+> **J. Zhang et al.**  
+> *"Local Perception-Enhanced Spatial-Temporal Evolving Graph Transformer Network for Citywide Demand Prediction of Taxi and Ride-Hailing."*  
+> **IEEE Transactions on Intelligent Transportation Systems**, Vol. 25, No. 11, November 2024.
+
+---
+
+### 🙏 Acknowledgements
+
+This project builds upon the work of the research community and several excellent open-source projects.
+
+Special thanks to the developers and contributors of:
+
+| Project | Contribution |
+|---|---|
+| 🧠 **PyTorch** | Deep learning framework used to implement and train the forecasting model |
+| 🗺️ **OSMnx** | OpenStreetMap-based spatial network analysis and geographic routing |
+| 🕸️ **NetworkX** | Graph construction, manipulation, and analysis |
+
+These tools were particularly important for constructing, validating, and analyzing the **geographic and spatial graph components** of the forecasting pipeline.
+
+A special acknowledgement also goes to the broader open-source community whose libraries, documentation, and research implementations made this reproduction possible.
+
+---
+
+### 📜 License
+
+This project is released under the **MIT License**.
+
+
+
+**Built for reproducible research in spatio-temporal deep learning 🚕📍📈**
+
+</div>
